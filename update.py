@@ -34,10 +34,12 @@ def download_releases():
 plugin_schema = Schema([{
     'id': And(Use(str)),
     'name': And(Use(str)),
-    'project_name': And(Use(str)),
     'tagline': And(Use(str)),
     'keywords': [And(Use(str))],
     'downloads': And(Use(int)),
+    'version': And(Use(str)),
+    'submission_date': And(Use(int)),
+    'html_url': And(Use(str)),
 }], ignore_extra_keys=True)
 
 
@@ -63,9 +65,23 @@ logging.debug('removing duplicates')
 done = set()
 result = []
 for plugin in validated:
+    # Checks that the plugin has not been seen yet
     if plugin['name'] not in done:
+        # Add it to the seen set
         done.add(plugin['name'])
+        # Append the plugin to the result array
         result.append(plugin)
+    # If the plugin has been seen, do this
+    else:
+        # Enumerate through all seen plugins
+        for index, old_plugin in enumerate(result):
+            # Check if plugin has the same name as plugin in results
+            if old_plugin['name'] == plugin['name']:
+                # Compare submission date to find newest version
+                if old_plugin['submission_date'] < plugin['submission_date']:
+                    # Remove old plugin and add new one
+                    result.remove(old_plugin)
+                    result.append(plugin)
 
 # Delete old collection
 logging.debug('deleting old collection')
@@ -78,10 +94,12 @@ collection_schema = {
     'name': 'plugins',
     'fields': [
         {'name': 'name', 'type': 'string'},
-        {'name': 'project_name', 'type': 'string'},
         {'name': 'tagline', 'type': 'string'},
         {'name': 'keywords', 'type': 'string[]'},
-        {'name': 'downloads', 'type': 'int32'}
+        {'name': 'downloads', 'type': 'int32'},
+        {'name': 'version', 'type': 'string'},
+        {'name': 'submission_date', 'type': 'int64'},
+        {'name': 'html_url', 'type': 'string'}
     ],
     'default_sorting_field': 'downloads'
 }
