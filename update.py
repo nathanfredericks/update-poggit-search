@@ -37,6 +37,7 @@ plugin_schema = Schema([{
     'project_name': And(Use(str)),
     'tagline': And(Use(str)),
     'keywords': [And(Use(str))],
+    'downloads': And(Use(int)),
 }], ignore_extra_keys=True)
 
 
@@ -79,8 +80,10 @@ collection_schema = {
         {'name': 'name', 'type': 'string'},
         {'name': 'project_name', 'type': 'string'},
         {'name': 'tagline', 'type': 'string'},
-        {'name': 'keywords', 'type': 'string[]'}
-    ]
+        {'name': 'keywords', 'type': 'string[]'},
+        {'name': 'downloads', 'type': 'int32'}
+    ],
+    'default_sorting_field': 'downloads'
 }
 
 response2 = client.collections.create(collection_schema)
