@@ -26,7 +26,7 @@ client = typesense.Client({
 
 @retry(retry=retry_if_exception_type(JSONDecodeError), stop=stop_after_attempt(10))
 def download_releases():
-    r = requests.get('https://poggit.pmmp.io/releases.json')
+    r = requests.get('https://poggit.pmmp.io/releases.min.json')
     json = r.json()
     return json
 
