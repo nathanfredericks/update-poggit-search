@@ -1,1 +1,2 @@
-# update-poggit-search
+# Update Poggit Search
+Script to update Poggit Search Typesense collection.
