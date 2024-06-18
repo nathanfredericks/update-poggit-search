@@ -16,9 +16,9 @@ logging.basicConfig(
 client = typesense.Client({
     'api_key': os.getenv('TYPESENSE_API_KEY'),
     'nodes': [{
-        'host': 'poggit-search.mcpe.fun',
-        'port': '443',
-        'protocol': 'https'
+        'host': os.getenv('TYPESENSE_HOST'),
+        'port': os.getenv('TYPESENSE_PORT'),
+        'protocol': os.getenv('TYPESENSE_PROTOCOL')
     }],
     'connection_timeout_seconds': 2 * 60
 })
@@ -26,7 +26,7 @@ client = typesense.Client({
 
 @retry(retry=retry_if_exception_type(JSONDecodeError), stop=stop_after_attempt(10))
 def download_releases():
-    r = requests.get('https://poggit.pmmp.io/releases.min.json')
+    r = requests.get(f"{os.getenv('POGGIT_PROTOCOL')}://{os.getenv('POGGIT_HOST')}:{os.getenv('POGGIT_PORT')}/releases.min.json")
     json = r.json()
     return json
 
@@ -85,8 +85,10 @@ for plugin in validated:
 
 # Delete old collection
 logging.debug('deleting old collection')
-response1 = client.collections['plugins'].delete()
-print(response1)
+try:
+    client.collections['plugins'].delete()
+except Exception as e:
+    pass
 
 # Create new schema
 logging.debug('creating new collection')
@@ -104,10 +106,9 @@ collection_schema = {
     'default_sorting_field': 'downloads'
 }
 
-response2 = client.collections.create(collection_schema)
-print(response2)
+client.collections.create(collection_schema)
 
 logging.debug('uploading collection to search index')
+
 # Add releases
-response3 = client.collections['plugins'].documents.import_(result, {'action': 'create'})
-print(response3)
+client.collections['plugins'].documents.import_(result, {'action': 'create'})
