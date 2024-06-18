@@ -9,9 +9,9 @@ services:
       POGGIT_PROTOCOL: https
       POGGIT_HOST: poggit.pmmp.io
       POGGIT_PORT: 443
-    restart: always
     links:
       - typesense:typesense
+    restart: on-failure
   typesense:
     image: typesense/typesense:26.0
     environment:
