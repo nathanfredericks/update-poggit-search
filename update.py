@@ -126,7 +126,7 @@ if not len(keys):
 
         logging.debug("saving new search key to ./shared/.env")
         env_file_path = Path("./shared/.env")
-        env_file_path.touch(mode=0o600, exist_ok=False)
+        env_file_path.touch()
         set_key(dotenv_path=env_file_path, key_to_set="TYPESENSE_SEARCH_ONLY_API_KEY", value_to_set=value)
     except Exception as e:
         logging.error(e)
