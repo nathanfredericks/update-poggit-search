@@ -124,7 +124,7 @@ if not len(keys):
         })
         value = key['value']
 
-        logging.info("created new search key with value:", value)
+        logging.info("created new search key with value: " + value)
     except Exception as e:
         logging.error(e)
         pass
