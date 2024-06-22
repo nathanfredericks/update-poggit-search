@@ -5,10 +5,10 @@ import os
 from tenacity import retry, stop_after_attempt, retry_if_exception_type
 from schema import Schema, And, Use, SchemaError
 import logging
+from dotenv import set_key
+from pathlib import Path
 
 logging.basicConfig(
-    filename='update-poggit-search.log',
-    encoding='utf-8',
     level=logging.DEBUG,
     format='%(asctime)s %(levelname)-8s %(message)s',
     datefmt='%Y-%m-%d %H:%M:%S')
@@ -22,7 +22,6 @@ client = typesense.Client({
     }],
     'connection_timeout_seconds': 2 * 60
 })
-
 
 @retry(retry=retry_if_exception_type(JSONDecodeError), stop=stop_after_attempt(10))
 def download_releases():
@@ -112,3 +111,24 @@ logging.debug('uploading collection to search index')
 
 # Add releases
 client.collections['plugins'].documents.import_(result, {'action': 'create'})
+
+keys = client.keys.retrieve()['keys']
+
+if not len(keys):
+    try:
+        logging.debug("creating new search key")
+        key = client.keys.create({
+            "description": "Search-only plugins key.",
+            "actions": ["documents:search"],
+            "collections": ["plugins"]
+        })
+        value = key['value']
+
+        logging.debug("saving new search key to ./shared/.env")
+        env_file_path = Path("./shared/.env")
+        env_file_path.touch(mode=0o600, exist_ok=False)
+        set_key(dotenv_path=env_file_path, key_to_set="TYPESENSE_SEARCH_ONLY_API_KEY", value_to_set=value)
+    except Exception as e:
+        logging.error(e)
+        pass
+

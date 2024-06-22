@@ -1,5 +1,5 @@
 services:
-  update:
+  update-poggit-search:
     build: .
     environment:
       TYPESENSE_HOST: typesense
@@ -12,6 +12,8 @@ services:
     links:
       - typesense:typesense
     restart: on-failure
+    volumes:
+      - ./shared:/app/shared
   typesense:
     image: typesense/typesense:26.0
     environment:
@@ -19,8 +21,7 @@ services:
       TYPESENSE_API_KEY: poggit-search-admin
     volumes:
       - typesense:/data
-    restart: always
-    entrypoint:
+    restart: on-failure
 volumes:
   typesense:
     driver: local
