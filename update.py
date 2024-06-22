@@ -124,10 +124,7 @@ if not len(keys):
         })
         value = key['value']
 
-        logging.debug("saving new search key to ./shared/.env.local")
-        env_file_path = Path("./shared/.env.local")
-        env_file_path.touch()
-        set_key(dotenv_path=env_file_path, key_to_set="NEXT_PUBLIC_POGGIT_SEARCH_API_KEY", value_to_set=value)
+        logging.info("created new search key with value:", value)
     except Exception as e:
         logging.error(e)
         pass
