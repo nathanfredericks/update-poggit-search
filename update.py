@@ -5,8 +5,6 @@ import os
 from tenacity import retry, stop_after_attempt, retry_if_exception_type
 from schema import Schema, And, Use, SchemaError
 import logging
-from dotenv import set_key
-from pathlib import Path
 
 logging.basicConfig(
     level=logging.DEBUG,
@@ -16,16 +14,15 @@ logging.basicConfig(
 client = typesense.Client({
     'api_key': os.getenv('TYPESENSE_API_KEY'),
     'nodes': [{
-        'host': os.getenv('TYPESENSE_HOST'),
-        'port': os.getenv('TYPESENSE_PORT'),
-        'protocol': os.getenv('TYPESENSE_PROTOCOL')
+        'host': os.getenv('TYPESENSE_HOST', 'typesense'),
+        'port': os.getenv('TYPESENSE_PORT', '8108'),
+        'protocol': os.getenv('TYPESENSE_PROTOCOL', 'http')
     }],
-    'connection_timeout_seconds': 2 * 60
 })
 
 @retry(retry=retry_if_exception_type(JSONDecodeError), stop=stop_after_attempt(10))
 def download_releases():
-    r = requests.get(f"{os.getenv('POGGIT_PROTOCOL')}://{os.getenv('POGGIT_HOST')}:{os.getenv('POGGIT_PORT')}/releases.min.json")
+    r = requests.get(f"{os.getenv('POGGIT_PROTOCOL', 'https')}://{os.getenv('POGGIT_HOST', 'poggit.pmmp.io')}:{os.getenv('POGGIT_PORT', '443')}/releases.min.json")
     json = r.json()
     return json
 
@@ -49,18 +46,13 @@ def validate_releases(plugins):
     except SchemaError:
         return []
 
-
-# Download releases
-logging.debug('downloading releases...')
+logging.debug('Downloading releases from Poggit...')
 releases = download_releases()
 
-# Validate releases
-logging.debug('releases downloaded... validating')
+logging.debug('Validating releases...')
 validated = validate_releases(releases)
 
-logging.debug('removing duplicates')
-
-# Remove duplicates
+logging.debug('Removing duplicate releases...')
 done = set()
 result = []
 for plugin in validated:
@@ -82,15 +74,13 @@ for plugin in validated:
                     result.remove(old_plugin)
                     result.append(plugin)
 
-# Delete old collection
-logging.debug('deleting old collection')
+logging.debug('Deleting previous collection...')
 try:
     client.collections['plugins'].delete()
 except Exception as e:
     pass
 
-# Create new schema
-logging.debug('creating new collection')
+logging.debug('Creating collection...')
 collection_schema = {
     'name': 'plugins',
     'fields': [
@@ -104,28 +94,7 @@ collection_schema = {
     ],
     'default_sorting_field': 'downloads'
 }
-
 client.collections.create(collection_schema)
 
-logging.debug('uploading collection to search index')
-
-# Add releases
+logging.debug('Importing releases to collection...')
 client.collections['plugins'].documents.import_(result, {'action': 'create'})
-
-keys = client.keys.retrieve()['keys']
-
-if not len(keys):
-    try:
-        logging.debug("creating new search key")
-        key = client.keys.create({
-            "description": "Search-only plugins key.",
-            "actions": ["documents:search"],
-            "collections": ["plugins"]
-        })
-        value = key['value']
-
-        logging.info("created new search key with value: " + value)
-    except Exception as e:
-        logging.error(e)
-        pass
-

@@ -2,26 +2,20 @@ services:
   update-poggit-search:
     build: .
     environment:
-      TYPESENSE_HOST: typesense
-      TYPESENSE_PORT: 8108
-      TYPESENSE_PROTOCOL: http
-      TYPESENSE_API_KEY: poggit-search-admin
-      POGGIT_PROTOCOL: https
-      POGGIT_HOST: poggit.pmmp.io
-      POGGIT_PORT: 443
+      TYPESENSE_API_KEY: insecure
     links:
       - typesense:typesense
     restart: on-failure
-    volumes:
-      - ./shared:/app/shared
+
   typesense:
     image: typesense/typesense:26.0
     environment:
       TYPESENSE_DATA_DIR: /data
-      TYPESENSE_API_KEY: poggit-search-admin
+      TYPESENSE_API_KEY: insecure
     volumes:
       - typesense:/data
     restart: on-failure
+
 volumes:
   typesense:
     driver: local
